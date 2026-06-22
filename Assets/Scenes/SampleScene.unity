@@ -150,6 +150,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1617257057}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &458517317
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 458517318}
+  m_Layer: 0
+  m_Name: FrontRoot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &458517318
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 458517317}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.5, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1617257057}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &487083369
 GameObject:
   m_ObjectHideFlags: 0
@@ -161,7 +192,7 @@ GameObject:
   - component: {fileID: 487083372}
   - component: {fileID: 487083371}
   - component: {fileID: 487083370}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Square
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -698,7 +729,7 @@ MonoBehaviour:
   facing: {fileID: 1617257046}
   hitbox: {fileID: 1167608990}
   animator: {fileID: 0}
-  defaultWeapon: {fileID: 0}
+  defaultWeapon: {fileID: 11400000, guid: bf20c14c11c1f1c4481a2e300e302841, type: 2}
 --- !u!114 &1617257046
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -713,7 +744,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game2D.Movement.PlayerFacing2D
   input: {fileID: 1617257052}
   visualRoot: {fileID: 1617257057}
-  frontRoot: {fileID: 0}
+  frontRoot: {fileID: 458517318}
 --- !u!114 &1617257047
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -757,8 +788,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game2D.Skills.SkillTreeRuntime
   stats: {fileID: 1617257051}
-  startingSkillPoints: 0
-  unlockedAtStart: []
+  startingSkillPoints: 1
+  unlockedAtStart:
+  - {fileID: 11400000, guid: d98a7168c43394c4495978f9f7602682, type: 2}
 --- !u!114 &1617257049
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -812,14 +844,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da079127cde746a4e90e53fd8d918718, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game2D.Inputs.PlayerInputReader
-  moveAction: {fileID: 0}
-  jumpAction: {fileID: 0}
-  attackAction: {fileID: 0}
-  dashAction: {fileID: 0}
-  interactAction: {fileID: 0}
+  moveAction: {fileID: -1680190386980627800, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  jumpAction: {fileID: -2099379676528639254, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  attackAction: {fileID: 1120369429361536294, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  dashAction: {fileID: -6920889837807067404, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  interactAction: {fileID: 1781555164194001046, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   legacyAttackKey: 106
   legacyDashKey: 107
-  legacyInteractKey: 101
+  legacyInteractKey: 102
 --- !u!114 &1617257053
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -832,14 +864,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd3d3e2eb4aed66418c1b9c1b0d5202c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game2D.Core.PlayerCompositionRoot
-  input: {fileID: 0}
-  stats: {fileID: 0}
-  resources: {fileID: 0}
-  movement: {fileID: 0}
-  facing: {fileID: 0}
-  combat: {fileID: 0}
-  equipment: {fileID: 0}
-  skillTree: {fileID: 0}
+  input: {fileID: 1617257052}
+  stats: {fileID: 1617257051}
+  resources: {fileID: 1617257050}
+  movement: {fileID: 1617257047}
+  facing: {fileID: 1617257046}
+  combat: {fileID: 1617257045}
+  equipment: {fileID: 1617257049}
+  skillTree: {fileID: 1617257048}
 --- !u!70 &1617257054
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -979,6 +1011,7 @@ Transform:
   m_Children:
   - {fileID: 141339687}
   - {fileID: 1167608992}
+  - {fileID: 458517318}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
