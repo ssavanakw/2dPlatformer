@@ -19,5 +19,27 @@ MonoBehaviour:
   baseDamage: 10
   attackRange: 1.2
   comboResetTime: 0.75
-  combo: []
+  combo:
+  - animationTrigger: Attack1
+    damageMultiplier: 1
+    staminaCost: 0
+    startupTime: 0
+    activeTime: 0
+    recoveryTime: 0
+    comboInputWindowStart: 0
+    comboInputWindowEnd: 0
+    lockMovement: 0
+    selfImpulse: {x: 0, y: 0}
+    requiredSkill: {fileID: 0}
+  - animationTrigger: Attack2
+    damageMultiplier: 1.15
+    staminaCost: 0
+    startupTime: 0
+    activeTime: 0
+    recoveryTime: 0
+    comboInputWindowStart: 0
+    comboInputWindowEnd: 0
+    lockMovement: 0
+    selfImpulse: {x: 0, y: 0}
+    requiredSkill: {fileID: 0}
   statModifiers: []

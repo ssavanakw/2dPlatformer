@@ -12,4 +12,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15aacda3ab62eac42b32e09abd9e84fd, type: 3}
   m_Name: StatProfile_Player
   m_EditorClassIdentifier: Assembly-CSharp::Game2D.Core.StatProfile
-  baseStats: []
+  baseStats:
+  - stat: 5
+    value: 100
+  - stat: 6
+    value: 50
+  - stat: 12
+    value: 100
+  - stat: 11
+    value: 6
+  - stat: 10
+    value: 1
+  - stat: 7
+    value: 5
+  - stat: 13
+    value: 0.1
+  - stat: 14
+    value: 1.5
