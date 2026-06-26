@@ -17,5 +17,8 @@ MonoBehaviour:
   icon: {fileID: 0}
   maxStack: 1
   slot: 0
-  statModifiers: []
+  statModifiers:
+  - stat: 7
+    type: 0
+    value: 5
   weaponData: {fileID: 0}

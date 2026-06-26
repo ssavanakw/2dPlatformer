@@ -23,6 +23,7 @@ namespace Game2D.Core
         MagicalResistance,
         HPRegen,
         MPRegen,
+        StaminaRegen,
         Accuracy,
         PhysicalPenetration,
         MagicalPenetration,

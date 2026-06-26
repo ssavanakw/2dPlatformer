@@ -8,6 +8,9 @@ namespace Game2D.Core
         [SerializeField] private StatController stats;
         [SerializeField] private bool refillOnStart = true;
 
+        [Header("Stamina Settings")]
+        [SerializeField] private float staminaRegenDelay = 1f;
+
         public float CurrentHP { get; private set; }
         public float CurrentMana { get; private set; }
         public float CurrentStamina { get; private set; }
@@ -20,6 +23,8 @@ namespace Game2D.Core
         public event Action<float, float> ManaChanged;
         public event Action<float, float> StaminaChanged;
         public event Action Died;
+
+        private float lastStaminaSpendTime;
 
         private void Reset()
         {
@@ -65,8 +70,17 @@ namespace Game2D.Core
             if (stats == null || CurrentHP <= 0f)
                 return;
 
+            // HP + Mana regen always active
             RestoreHP(stats.GetValue(StatId.HPRegen) * deltaTime);
             RestoreMana(stats.GetValue(StatId.MPRegen) * deltaTime);
+
+            // Stamina regen with delay gate
+            if (Time.time >= lastStaminaSpendTime + staminaRegenDelay)
+            {
+                float staminaRegen = stats.GetValue(StatId.StaminaRegen);
+                if (staminaRegen > 0f)
+                    RestoreStamina(staminaRegen * deltaTime);
+            }
         }
 
         public bool SpendStamina(float amount)
@@ -78,6 +92,8 @@ namespace Game2D.Core
                 return false;
 
             CurrentStamina -= amount;
+            lastStaminaSpendTime = Time.time;
+
             StaminaChanged?.Invoke(CurrentStamina, MaxStamina);
             return true;
         }
