@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class EnemyAI : MonoBehaviour
@@ -7,18 +8,27 @@ public class EnemyAI : MonoBehaviour
     [Header("Movement")]
     [SerializeField] private float patrolSpeed = 2f;
     [SerializeField] private float chaseSpeed = 3.5f;
+    [SerializeField] private float waypointReachedDistance = 0.2f;
 
-    [Header("Patrol Points")]
-    [SerializeField] private Transform pointA;
-    [SerializeField] private Transform pointB;
+    [Header("Patrol")]
+    [Tooltip("How far from its spawn point the enemy will wander while patrolling")]
+    [SerializeField] private float patrolRadius = 5f;
 
     [Header("Player Detection")]
     [SerializeField] private float detectionRadius = 5f;
     [SerializeField] private LayerMask playerLayer;
 
+    [Header("Pathfinding")]
+    [SerializeField] private AStarPathfinder pathfinder;
+    [SerializeField] private float pathRecalculateInterval = 0.4f;
+
     private State currentState = State.Patrol;
-    private Transform patrolTarget;
+    private Vector2 spawnPosition;
     private Transform player;
+
+    private List<Vector2> currentPath;
+    private int pathIndex;
+    private float pathTimer;
 
     private Rigidbody2D rb;
     private SpriteRenderer sr;
@@ -31,13 +41,14 @@ public class EnemyAI : MonoBehaviour
 
     private void Start()
     {
-        // start heading toward pointB
-        patrolTarget = pointB;
+        spawnPosition = transform.position;
+        PickNewPatrolPoint();
     }
 
     private void Update()
     {
         DetectPlayer();
+        pathTimer -= Time.deltaTime;
 
         if (currentState == State.Chase)
             Chase();
@@ -48,33 +59,91 @@ public class EnemyAI : MonoBehaviour
     private void DetectPlayer()
     {
         Collider2D hit = Physics2D.OverlapCircle(transform.position, detectionRadius, playerLayer);
+        State newState = hit != null ? State.Chase : State.Patrol;
 
         if (hit != null)
-        {
             player = hit.transform;
-            currentState = State.Chase;
-        }
-        else
+
+        if (newState != currentState)
         {
-            currentState = State.Patrol;
+            currentState = newState;
+            currentPath = null; // force a fresh path whenever the state changes
         }
     }
 
     private void Patrol()
     {
-        if (pointA == null || pointB == null) return;
+        if (currentPath == null && pathTimer <= 0f)
+            PickNewPatrolPoint();
 
-        MoveTowards(patrolTarget.position, patrolSpeed);
+        bool reachedEnd = FollowPath(patrolSpeed);
 
-        // reached the target point, switch to the other one
-        if (Vector2.Distance(transform.position, patrolTarget.position) < 0.1f)
-            patrolTarget = patrolTarget == pointA ? pointB : pointA;
+        if (reachedEnd)
+            PickNewPatrolPoint();
     }
 
     private void Chase()
     {
         if (player == null) return;
-        MoveTowards(player.position, chaseSpeed);
+
+        if (pathTimer <= 0f)
+            RequestPath(player.position);
+
+        FollowPath(chaseSpeed);
+    }
+
+    // picks a random walkable point within patrolRadius of the spawn position
+    private void PickNewPatrolPoint()
+    {
+        if (pathfinder == null) return;
+
+        const int maxAttempts = 8;
+        for (int i = 0; i < maxAttempts; i++)
+        {
+            Vector2 candidate = spawnPosition + Random.insideUnitCircle * patrolRadius;
+
+            if (pathfinder.Grid != null && !pathfinder.Grid.IsWalkable(candidate))
+                continue;
+
+            currentPath = pathfinder.FindPath(transform.position, candidate);
+            if (currentPath != null)
+            {
+                pathIndex = 0;
+                pathTimer = pathRecalculateInterval;
+                return;
+            }
+        }
+        // couldn't find a valid point this attempt, just try again shortly
+        pathTimer = pathRecalculateInterval;
+    }
+
+    private void RequestPath(Vector2 targetPos)
+    {
+        if (pathfinder == null) return;
+
+        currentPath = pathfinder.FindPath(transform.position, targetPos);
+        pathIndex = 0;
+        pathTimer = pathRecalculateInterval;
+    }
+
+    // moves toward the next waypoint, returns true once the whole path is complete
+    private bool FollowPath(float speed)
+    {
+        if (currentPath == null || currentPath.Count == 0) return false;
+
+        Vector2 targetPoint = currentPath[pathIndex];
+        MoveTowards(targetPoint, speed);
+
+        if (Vector2.Distance(transform.position, targetPoint) < waypointReachedDistance)
+        {
+            pathIndex++;
+            if (pathIndex >= currentPath.Count)
+            {
+                currentPath = null;
+                return true;
+            }
+        }
+        return false;
     }
 
     private void MoveTowards(Vector2 targetPos, float speed)
@@ -89,17 +158,20 @@ public class EnemyAI : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        // detection radius
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, detectionRadius);
 
-        // patrol path
-        if (pointA != null && pointB != null)
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(Application.isPlaying ? (Vector3)spawnPosition : transform.position, patrolRadius);
+
+        if (currentPath != null)
         {
-            Gizmos.color = Color.green;
-            Gizmos.DrawLine(pointA.position, pointB.position);
-            Gizmos.DrawWireSphere(pointA.position, 0.15f);
-            Gizmos.DrawWireSphere(pointB.position, 0.15f);
+            Gizmos.color = Color.cyan;
+            for (int i = 0; i < currentPath.Count; i++)
+            {
+                Gizmos.DrawSphere(currentPath[i], 0.1f);
+                if (i > 0) Gizmos.DrawLine(currentPath[i - 1], currentPath[i]);
+            }
         }
     }
 }
