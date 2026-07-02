@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class EnemyAI : MonoBehaviour
+public class RangedEnemyAI : MonoBehaviour
 {
-    private enum State { Patrol, Chase }
+    private enum State { Patrol, Chase, Attack }
 
     [Header("Movement")]
     [SerializeField] private float patrolSpeed = 2f;
@@ -15,8 +15,16 @@ public class EnemyAI : MonoBehaviour
     [SerializeField] private float patrolRadius = 5f;
 
     [Header("Player Detection")]
-    [SerializeField] private float detectionRadius = 5f;
+    [SerializeField] private float detectionRadius = 6f;
     [SerializeField] private LayerMask playerLayer;
+
+    [Header("Ranged Attack")]
+    [Tooltip("Distance at which the enemy stops moving and starts shooting")]
+    [SerializeField] private float attackRange = 4f;
+    [SerializeField] private float fireRate = 1f; // shots per second
+    [SerializeField] private int damage = 10;
+    [SerializeField] private LayerMask lineOfSightObstacles; // walls etc that block the shot
+    [SerializeField] private Transform firePoint; // optional, defaults to enemy position
 
     [Header("Pathfinding")]
     [SerializeField] private AStarPathfinder pathfinder;
@@ -25,6 +33,7 @@ public class EnemyAI : MonoBehaviour
     private State currentState = State.Patrol;
     private Vector2 spawnPosition;
     private Transform player;
+    private float fireTimer;
 
     private List<Vector2> currentPath;
     private int pathIndex;
@@ -49,25 +58,46 @@ public class EnemyAI : MonoBehaviour
     {
         DetectPlayer();
         pathTimer -= Time.deltaTime;
+        fireTimer -= Time.deltaTime;
 
-        if (currentState == State.Chase)
-            Chase();
-        else
-            Patrol();
+        switch (currentState)
+        {
+            case State.Attack:
+                Attack();
+                break;
+            case State.Chase:
+                Chase();
+                break;
+            default:
+                Patrol();
+                break;
+        }
     }
 
     private void DetectPlayer()
     {
         Collider2D hit = Physics2D.OverlapCircle(transform.position, detectionRadius, playerLayer);
-        State newState = hit != null ? State.Chase : State.Patrol;
 
-        if (hit != null)
-            player = hit.transform;
+        if (hit == null)
+        {
+            if (currentState != State.Patrol)
+            {
+                currentState = State.Patrol;
+                currentPath = null;
+            }
+            return;
+        }
+
+        player = hit.transform;
+        float dist = Vector2.Distance(transform.position, player.position);
+
+        State newState = dist <= attackRange ? State.Attack : State.Chase;
 
         if (newState != currentState)
         {
             currentState = newState;
-            currentPath = null; // force a fresh path whenever the state changes
+            currentPath = null; // force a fresh path/stop whenever state changes
+            rb.linearVelocity = Vector2.zero;
         }
     }
 
@@ -92,7 +122,52 @@ public class EnemyAI : MonoBehaviour
         FollowPath(chaseSpeed);
     }
 
-    // picks a random walkable point within patrolRadius of the spawn position
+    private void Attack()
+    {
+        if (player == null) return;
+
+        // stand still
+        rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+
+        // face the player
+        float dir = Mathf.Sign(player.position.x - transform.position.x);
+        if (sr != null) sr.flipX = dir < 0;
+
+        // keep re-checking range in case player walks away mid-attack
+        float dist = Vector2.Distance(transform.position, player.position);
+        if (dist > attackRange)
+        {
+            currentState = State.Chase;
+            return;
+        }
+
+        if (fireTimer <= 0f)
+        {
+            TryFire();
+            fireTimer = 1f / fireRate;
+        }
+    }
+
+    private void TryFire()
+    {
+        Vector2 origin = firePoint != null ? (Vector2)firePoint.position : (Vector2)transform.position;
+        Vector2 toPlayer = (Vector2)player.position - origin;
+
+        // check line of sight isn't blocked by a wall first
+        RaycastHit2D obstacleCheck = Physics2D.Raycast(origin, toPlayer.normalized, toPlayer.magnitude, lineOfSightObstacles);
+        if (obstacleCheck.collider != null)
+            return; // something's in the way, skip this shot
+
+        RaycastHit2D hit = Physics2D.Raycast(origin, toPlayer.normalized, detectionRadius, playerLayer);
+        if (hit.collider != null)
+        {
+            // hook up to your damage interface/system here, e.g.:
+            // hit.collider.GetComponent<IDamageable>()?.TakeDamage(damage);
+            Debug.DrawLine(origin, hit.point, Color.yellow, 0.2f);
+        }
+    }
+
+    // picks a random walkable point at the same height as spawn (ground-bound enemy)
     private void PickNewPatrolPoint()
     {
         if (pathfinder == null) return;
@@ -114,7 +189,6 @@ public class EnemyAI : MonoBehaviour
                 return;
             }
         }
-        // couldn't find a valid point this attempt, just try again shortly
         pathTimer = pathRecalculateInterval;
     }
 
@@ -127,7 +201,6 @@ public class EnemyAI : MonoBehaviour
         pathTimer = pathRecalculateInterval;
     }
 
-    // moves toward the next waypoint, returns true once the whole path is complete
     private bool FollowPath(float speed)
     {
         if (currentPath == null || currentPath.Count == 0) return false;
@@ -169,6 +242,9 @@ public class EnemyAI : MonoBehaviour
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, detectionRadius);
+
+        Gizmos.color = new Color(1f, 0.5f, 0f); // orange
+        Gizmos.DrawWireSphere(transform.position, attackRange);
 
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(Application.isPlaying ? (Vector3)spawnPosition : transform.position, patrolRadius);
